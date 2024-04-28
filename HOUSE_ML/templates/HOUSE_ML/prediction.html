@@ -1,0 +1,190 @@
+<!-- prediction.html -->
+{% extends 'HOUSE_ML/base.html' %}
+{% load static %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predict House Price</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{% static 'HOUSE_ML/app.css' %}" />
+    <style>
+        .container-box {
+            margin-top: 50px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .popup-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 30%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="img"></div>
+    <div class="text-center ">
+        <h1>Predict House Price</h1>
+    </div>
+    <form class="form" id="predictionForm" method='GET' action="{% url 'predict-price' %}">
+        {% csrf_token %}
+        <h2>Area (Square Feet)</h2>
+        <input class="area" type="text" id="uiSqft" class="floatLabel" name="Squareft" value="1000" />
+        <h2>BHK</h2>
+        <div class="switch-field">
+            <input type="radio" id="radio-bhk-1" name="uiBHK" value="1" />
+            <label for="radio-bhk-1">1</label>
+            <input type="radio" id="radio-bhk-2" name="uiBHK" value="2" checked />
+            <label for="radio-bhk-2">2</label>
+            <input type="radio" id="radio-bhk-3" name="uiBHK" value="3" />
+            <label for="radio-bhk-3">3</label>
+            <input type="radio" id="radio-bhk-4" name="uiBHK" value="4" />
+            <label for="radio-bhk-4">4</label>
+            <input type="radio" id="radio-bhk-5" name="uiBHK" value="5" />
+            <label for="radio-bhk-5">5</label>
+        </div>
+        <h2>Bath</h2>
+        <div class="switch-field">
+            <input type="radio" id="radio-bath-1" name="uiBathrooms" value="1" />
+            <label for="radio-bath-1">1</label>
+            <input type="radio" id="radio-bath-2" name="uiBathrooms" value="2" checked />
+            <label for="radio-bath-2">2</label>
+            <input type="radio" id="radio-bath-3" name="uiBathrooms" value="3" />
+            <label for="radio-bath-3">3</label>
+            <input type="radio" id="radio-bath-4" name="uiBathrooms" value="4" />
+            <label for="radio-bath-4">4</label>
+            <input type="radio" id="radio-bath-5" name="uiBathrooms" value="5" />
+            <label for="radio-bath-5">5</label>
+        </div>
+        <h2>Location</h2>
+        <div>
+            <select class="location" name="uiLocations" id="uiLocations">
+                <option value="" disabled="disabled" selected="selected">Choose a Location</option>
+                {% for item in columns %}
+                <option >{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <h1>{{ context.price }}</h1>
+        <button class="submit" type="submit" id="estimateButton">Estimate Price</button>
+    </form>
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closePopup()">&times;</span>
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th>Area:</th>
+                        <td id="popupArea"></td>
+                    </tr>
+                    <tr>
+                        <th>BHK:</th>
+                        <td id="popupBHK"></td>
+                    </tr>
+                    <tr>
+                        <th>Bath:</th>
+                        <td id="popupBath"></td>
+                    </tr>
+                    <tr>
+                        <th>Location:</th>
+                        <td id="popupLocation"></td>
+                    </tr>
+                    <tr>
+                        <th class="text-primary">Estimated Price:</th>
+                        <td id="popupEstimatedPrice"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        // Function to open the popup and submit the form
+        function openPopupAndSubmitForm(event) {
+            event.preventDefault(); // Prevent form submission
+            console.log("Form submitted");
+            // Get the form data
+            var formData = new FormData(document.getElementById('predictionForm'));
+            console.log("Form data:", formData);
+            // Show the popup
+            document.getElementById("popup").style.display = "block";
+            // Send the form data asynchronously
+            fetch("{% url 'predict-price' %}?" + new URLSearchParams(formData).toString())
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response data:", data);
+                    // Display the response in the popup
+                    document.getElementById("popupArea").innerText = data.Area;
+                    document.getElementById("popupBHK").innerText = data.BHK;
+                    document.getElementById("popupBath").innerText = data.Bath;
+                    document.getElementById("popupLocation").innerText = data.Location;
+                    document.getElementById("popupEstimatedPrice").innerText = data.EstimatedPrice+"lakh";
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        // Function to close the popup
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+        // Attach the openPopupAndSubmitForm function to the form submit event
+        document.getElementById("predictionForm").addEventListener("submit", openPopupAndSubmitForm);
+
+        function onPageLoad() {
+            console.log("document loaded");
+            var url = "/get_location_names"; // URL to the Django endpoint
+            $.get(url, function(data, status) {
+                console.log("got response for get_location_names request");
+                if (data) {
+                    var locations = data.locations;
+                    var uiLocations = document.getElementById("uiLocations");
+                    $('#uiLocations').empty();
+                    for (var i in locations) {
+                        var opt = new Option(locations[i]);
+                        $('#uiLocations').append(opt);
+                    }
+                }
+                $(document).ready(function() {
+                    onPageLoad();
+                });
+                
+            });
+        }
+        
+        // Call onPageLoad when the page is fully loaded
+        
+        
+    </script>
+    
+</body>
+</html>
+{% endblock %}
