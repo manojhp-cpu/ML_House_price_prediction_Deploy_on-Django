@@ -17,7 +17,7 @@ class RegisterForm(UserCreationForm):
           max_length=100,
           required=True,
           widget=forms.TextInput(attrs={
-               'placeholder':'First Name',
+               'placeholder':'Last Name',
                'class':'form-control',
           })
      )

@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.views.generic import FormView,TemplateView
 import numpy as np
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 
 def home(request):
     return render(request, 'HOUSE_ML/home.html')
@@ -156,3 +157,8 @@ def predict_price(request):
 
         # Return the estimated price as JSON response instead of rendering the template
         return JsonResponse({'EstimatedPrice': price, 'Area': square_feet, 'BHK': bhk, 'Bath': bathrooms, "Location": location})
+
+
+def custom_logout(request):
+    logout(request)
+    return redirect('home')
